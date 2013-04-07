@@ -80,6 +80,9 @@ public class Journal {
 			Date date = getDate(dateCol, r, sheet);
 			String dest = sheet.getCell(destCol, r).getContents().toLowerCase();
 
+			if (date == null)
+				break;
+			
 			if (dest.contains("dbn")) {
 				
 			} else {
@@ -111,7 +114,10 @@ public class Journal {
 
 	private Date getDate(int c, int r, Sheet s) {
 		String tmp = s.getCell(c, r).getContents();
-
+		
+		if (tmp.equals(""))
+			return null;
+		
 		int one = Integer.parseInt(tmp.substring(0, tmp.indexOf("/")));
 		tmp = tmp.substring(tmp.indexOf("/") + 1);
 		int two = Integer.parseInt(tmp.substring(0, tmp.indexOf("/")));
