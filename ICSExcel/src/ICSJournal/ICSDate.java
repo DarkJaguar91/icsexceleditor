@@ -9,6 +9,7 @@ public class ICSDate implements Comparable<ICSDate> {
 	public int week;
 	public GregorianCalendar gc;
 	
+	@SuppressWarnings("deprecation")
 	public ICSDate(Date date){
 		this.date = date;
 		
@@ -17,6 +18,7 @@ public class ICSDate implements Comparable<ICSDate> {
 		week = gc.get(GregorianCalendar.WEEK_OF_YEAR);
 	}
 	
+	@SuppressWarnings("deprecation")
 	@Override
 	public boolean equals(Object other) {
 		if (other instanceof ICSDate){
@@ -32,6 +34,7 @@ public class ICSDate implements Comparable<ICSDate> {
 
 	@Override
 	public int compareTo(ICSDate o) {
+		@SuppressWarnings("deprecation")
 		int yearcomp = this.date.getYear() > o.date.getYear() ? 1 : this.date.getYear() < o.date.getYear() ? -1 : 0;
 		
 		// if same year compare week
