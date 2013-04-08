@@ -1,24 +1,35 @@
 package ICSJournal;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+
 import jxl.CellView;
 import jxl.DateCell;
 import jxl.NumberCell;
 import jxl.Sheet;
 import jxl.Workbook;
+import jxl.format.Alignment;
+import jxl.format.Colour;
 import jxl.read.biff.BiffException;
+import jxl.write.Border;
+import jxl.write.BorderLineStyle;
 import jxl.write.Label;
 import jxl.write.Number;
+import jxl.write.NumberFormat;
+import jxl.write.WritableCellFormat;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 import jxl.write.biff.RowsExceededException;
 
+@SuppressWarnings("deprecation")
 public class Journal {
 
 	// required globals
@@ -28,15 +39,27 @@ public class Journal {
 	ArrayList<data> cpt;
 	ArrayList<ICSDate> cptWeek;
 
-	// formatting stuff
+	// formats
+	private static NumberFormat numberFormat = new NumberFormat(
+			"#,##0;[RED]#,##0;-;\"no Text\"", NumberFormat.COMPLEX_FORMAT);
 
 	/**
 	 * Constructor ( runs the entire algorithm)
 	 */
 	public Journal() {
 		try {
+
+			JFileChooser chooser = new JFileChooser();
+			
+			int ans = chooser.showOpenDialog(null);
+			
+			if (ans == JFileChooser.CANCEL_OPTION)
+				System.exit(0);
+			
+			File chosenFile = chooser.getSelectedFile();
+			
 			// create the reading book
-			Workbook reader = Workbook.getWorkbook(new File("inp.xls"));
+			Workbook reader = Workbook.getWorkbook(chosenFile);
 
 			int sheetNum = -1, rowNum = -1;
 
@@ -47,7 +70,7 @@ public class Journal {
 				sheetNum = d[0];
 				rowNum = d[1];
 			} else {
-				System.out.println("Failed");
+				JOptionPane.showMessageDialog(null, "The file chosen is not of the correct type.", "Error", JOptionPane.ERROR_MESSAGE);
 				System.exit(1);
 			}
 
@@ -58,15 +81,15 @@ public class Journal {
 			readData(reader, sheetNum, rowNum, d);
 
 			// write new workbook
-			writeWorkbook(reader, sheetNum);
+			writeWorkbook(reader, sheetNum, chosenFile);
 
 			// close workbooks
 			// reader.close(); moved to writeWorkbook
 
-			System.out.println("finished");
+			Desktop.getDesktop().open(chosenFile);
 
 		} catch (BiffException | IOException e) {
-			System.out.println("Fail");
+			JOptionPane.showMessageDialog(null, "The file specified does not exist", "Error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 	}
@@ -91,61 +114,207 @@ public class Journal {
 		// sort the values
 		Collections.sort(data);
 		Collections.sort(weeks);
-		
-		// headings
-		addString(sheet, 0, 1, "Commodity");
 
+		// headings
+		addHeading(sheet, 0, 1, "Commodity", 9000, null, Alignment.LEFT, "TBLR");
+		addString(sheet, 0, 2 + data.size(), "Total", null, Alignment.LEFT,
+				"TLBR");
+		addString(sheet, 0, 3 + data.size(), "Containers", null, Alignment.LEFT,
+				"TLBR");
+		addHeading(sheet, 1 + 2 * weeks.size(), 0, "Total", 3000, null,
+				Alignment.CENTRE, "TLR");
+		addHeading(sheet, 1 + 2 * weeks.size(), 1, "Value", 3000,
+				Colour.GREY_50_PERCENT, Alignment.CENTRE, "BL");
+		addHeading(sheet, 2 + 2 * weeks.size(), 1, "Quantity", 3000, null,
+				Alignment.CENTRE, "BRT");
+
+		// required data
+		valqty[] wtot = new valqty[weeks.size()];
+		for (int i = 0; i < weeks.size(); ++i)
+			wtot[i] = new valqty();
+		double valuebacklog = 0, valueforeward = 0;
+		int containersbacklog = 0, containersforeward = 0;
 		boolean writenWeekHeadings = false;
+		ICSDate today = new ICSDate(new Date());
 
 		// data loop 1
 		for (int i = 0; i < data.size(); ++i) {
 			// add commodity name
-			addString(sheet, 0, i + 2, data.get(i).commodity);
+			addString(sheet, 0, i + 2, data.get(i).commodity, null,
+					Alignment.LEFT, "LR");
+
+			// add commodity total
+			addNumber(sheet, 1 + 2 * weeks.size(), i + 2,
+					data.get(i).total.value, Colour.GRAY_50, Alignment.CENTRE,
+					i == data.size() - 1 ? "LB" : "L");
+			addNumber(sheet, 2 + 2 * weeks.size(), i + 2,
+					data.get(i).total.qty, null, Alignment.CENTRE,
+					i == data.size() - 1 ? "RB" : "R");
 
 			// write weekly data
 			for (int x = 0; x < weeks.size(); ++x) {
 
 				// add headings for columns if not already done
 				if (!writenWeekHeadings) {
-					addString(sheet, 1 + x * 2, 0, "Week: " + weeks.get(x).week);
-					addString(sheet, 1 + x * 2, 1, "Value");
-					addString(sheet, 2 + x * 2, 1, "Quantity");
+					addHeading(sheet, 1 + x * 2, 0, "Week: "
+							+ weeks.get(x).week, 3000, null, Alignment.CENTRE,
+							"TL");
+					addHeading(sheet, 1 + x * 2, 1, "Value", 3000,
+							Colour.GREY_50_PERCENT, Alignment.CENTRE, "BL");
+					addHeading(
+							sheet,
+							2 + x * 2,
+							1,
+							"Quantity",
+							3000,
+							today.compareTo(weeks.get(x)) > 0 ? Colour.RED
+									: today.compareTo(weeks.get(x)) == 0 ? Colour.YELLOW
+											: Colour.WHITE, Alignment.CENTRE,
+							"BR");
+
+					data.get(0);
 				}
 
-				addNumber(sheet, 1+x*2, 2 + i, data.get(i).data[weeks.get(x).week].value);
-				addNumber(sheet, 2+x*2, 2 + i, data.get(i).data[weeks.get(x).week].qty);
-				
-			}
-			writenWeekHeadings = true; // run weeks once, so written the headings
-		}
+				// data addition
+				addNumber(sheet, 1 + x * 2, 2 + i,
+						data.get(i).data[weeks.get(x).week].value,
+						Colour.GREY_50_PERCENT, Alignment.CENTRE, "l");
+				addNumber(
+						sheet,
+						2 + x * 2,
+						2 + i,
+						data.get(i).data[weeks.get(x).week].qty,
+						today.compareTo(weeks.get(x)) > 0 ? Colour.RED : today
+								.compareTo(weeks.get(x)) == 0 ? Colour.YELLOW
+								: Colour.WHITE, Alignment.CENTRE, "r");
 
-		// autosize every column
-		for (int i = 0; i < sheet.getColumns(); ++i) {
-			CellView cell = sheet.getColumnView(i);
-			cell.setAutosize(true);
-			sheet.setColumnView(i, cell);
+				wtot[x].qty += data.get(i).data[weeks.get(x).week].qty;
+				wtot[x].value += data.get(i).data[weeks.get(x).week].value;
+			} // end of week loop
+			writenWeekHeadings = true; // run weeks once, so written the
+										// headings
+		}// end of data loop
+
+		// print out week totals
+		for (int i = 0; i < wtot.length; ++i) {
+			addNumber(sheet, 1 + i * 2, 2 + data.size(), wtot[i].value,
+					Colour.GREY_50_PERCENT, Alignment.CENTRE, "TLB");
+			addNumber(
+					sheet,
+					2 + i * 2,
+					2 + data.size(),
+					wtot[i].qty,
+					today.compareTo(weeks.get(i)) > 0 ? Colour.RED : today
+							.compareTo(weeks.get(i)) == 0 ? Colour.YELLOW
+							: Colour.WHITE, Alignment.CENTRE, "TR");
+			addNumber(
+					sheet,
+					2 + i * 2,
+					3 + data.size(),
+					Math.round(wtot[i].qty / 26000d),
+					today.compareTo(weeks.get(i)) > 0 ? Colour.RED : today
+							.compareTo(weeks.get(i)) == 0 ? Colour.YELLOW
+							: Colour.WHITE, Alignment.CENTRE, "RLB");
+			
+			valuebacklog += today.compareTo(weeks.get(i)) > 0 ? wtot[i].value : 0;
+			valueforeward += today.compareTo(weeks.get(i)) <= 0 ? wtot[i].value : 0;
+			containersbacklog += today.compareTo(weeks.get(i)) > 0 ? Math.round(wtot[i].qty / 26000) : 0;
+			containersforeward += today.compareTo(weeks.get(i)) <= 0 ? Math.round(wtot[i].qty / 26000) : 0;
 		}
+		
+		// add last section (backlog and foreward)
+		addString(sheet, 0, 5 + data.size(), "Container Value", null, Alignment.LEFT, "TLBR");
+		addString(sheet, 1, 5 + data.size(), "Value (R)", null, Alignment.CENTRE, "TLBR");
+		addString(sheet, 2, 5 + data.size(), "Containers", null, Alignment.CENTRE, "TLBR");
+		addString(sheet, 0, 6 + data.size(), "Backlog", null, Alignment.LEFT, "TLB");
+		addString(sheet, 0, 7 + data.size(), "Foreward", null, Alignment.LEFT, "TLB");
+		addNumber(sheet, 1, 6 + data.size(), valuebacklog, null, Alignment.CENTRE, "TB");
+		addNumber(sheet, 2, 6 + data.size(), containersbacklog, null, Alignment.CENTRE, "TBR");
+		addNumber(sheet, 1, 7 + data.size(), valueforeward, null, Alignment.CENTRE, "TB");
+		addNumber(sheet, 2, 7 + data.size(), containersforeward, null, Alignment.CENTRE, "TBR");
+
+	}
+
+	/**
+	 * Gets format for the cell
+	 * 
+	 * @param col
+	 *            the colour for the cell
+	 * @param align
+	 *            the alignment for the cell
+	 * @param number
+	 *            if the cell should be a number
+	 * @param border
+	 *            the border string for the cell
+	 * @return the cells format
+	 */
+	@SuppressWarnings("deprecation")
+	private static WritableCellFormat getCellFormat(Colour col,
+			Alignment align, boolean number, String border) {
+		WritableCellFormat format = new WritableCellFormat();
+		try {
+			if (col == null)
+				col = Colour.WHITE;
+
+			if (number)
+				format = new WritableCellFormat(numberFormat);
+
+			// work with border
+			if (border != null) {
+				if (border.contains("T"))
+					format.setBorder(Border.TOP, BorderLineStyle.MEDIUM);
+				if (border.contains("t"))
+					format.setBorder(Border.TOP, BorderLineStyle.THIN);
+				if (border.contains("B"))
+					format.setBorder(Border.BOTTOM, BorderLineStyle.MEDIUM);
+				if (border.contains("b"))
+					format.setBorder(Border.BOTTOM, BorderLineStyle.THIN);
+				if (border.contains("L"))
+					format.setBorder(Border.LEFT, BorderLineStyle.MEDIUM);
+				if (border.contains("l"))
+					format.setBorder(Border.LEFT, BorderLineStyle.THIN);
+				if (border.contains("R"))
+					format.setBorder(Border.RIGHT, BorderLineStyle.MEDIUM);
+				if (border.contains("r"))
+					format.setBorder(Border.RIGHT, BorderLineStyle.THIN);
+			}
+
+			format.setAlignment(align);
+			format.setBackground(col);
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, "Error - The cell format could not be written.\nPlease contact your administrator.", "Error", JOptionPane.ERROR_MESSAGE);
+		}
+		return format;
 	}
 
 	/**
 	 * Add number to the sheet
-	 * @param sheet sheet to write to
-	 * @param c column
-	 * @param r row
-	 * @param number number to add
+	 * 
+	 * @param sheet
+	 *            sheet to write to
+	 * @param c
+	 *            column
+	 * @param r
+	 *            row
+	 * @param number
+	 *            number to add
 	 */
-	private void addNumber(WritableSheet sheet, int c, int r, double number) {
+	private void addNumber(WritableSheet sheet, int c, int r, double number,
+			Colour col, Alignment align, String border) {
 		try {
-			Number n = new Number(c, r, number);
-			
+			Number n = new Number(c, r, number, getCellFormat(col, align, true,
+					border));
+
 			sheet.addCell(n);
 		} catch (RowsExceededException e) {
+			JOptionPane.showMessageDialog(null, "The excel file has exceeded its bounds.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		} catch (WriteException e) {
+			JOptionPane.showMessageDialog(null, "The excel file could not be written to.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Adds a string to the sheet at the given column
 	 * 
@@ -158,16 +327,52 @@ public class Journal {
 	 * @param string
 	 *            the string to enter
 	 */
-	private void addString(WritableSheet sheet, int c, int r, String string) {
+	private void addString(WritableSheet sheet, int c, int r, String string,
+			Colour col, Alignment align, String border) {
 		try {
-			Label l = new Label(c, r, string);
-
-			// formatting here
+			Label l = new Label(c, r, string, getCellFormat(col, align, false,
+					border));
 
 			sheet.addCell(l);
 		} catch (RowsExceededException e) {
+			JOptionPane.showMessageDialog(null, "The excel file has exceeded its bounds.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		} catch (WriteException e) {
+			JOptionPane.showMessageDialog(null, "The excel file could not be written to.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Add a heading (this is the same as addString just with size column)
+	 * 
+	 * @param sheet
+	 *            sheet
+	 * @param c
+	 *            column
+	 * @param r
+	 *            row
+	 * @param string
+	 *            string
+	 * @param size
+	 *            size
+	 */
+	private void addHeading(WritableSheet sheet, int c, int r, String string,
+			int size, Colour col, Alignment align, String border) {
+		try {
+			Label l = new Label(c, r, string, getCellFormat(col, align, false,
+					border));
+
+			CellView cc = sheet.getColumnView(c);
+			cc.setSize(size);
+			sheet.setColumnView(c, cc);
+
+			sheet.addCell(l);
+		} catch (RowsExceededException e) {
+			JOptionPane.showMessageDialog(null, "The excel file has exceeded its bounds.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
+			e.printStackTrace();
+		} catch (WriteException e) {
+			JOptionPane.showMessageDialog(null, "The excel file could not be written to.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 	}
@@ -180,11 +385,10 @@ public class Journal {
 	 * @param sheetNumber
 	 *            the sheet number of the data sheet
 	 */
-	private void writeWorkbook(Workbook old, int sheetNumber) {
+	private void writeWorkbook(Workbook old, int sheetNumber, File chosenFile) {
 		try {
 			// open workbook
-			WritableWorkbook wrkbk = Workbook.createWorkbook(new File(
-					"test.xls"), old);
+			WritableWorkbook wrkbk = Workbook.createWorkbook(chosenFile, old);
 
 			// delete all sheets but the data
 			for (int i = 0; i <= wrkbk.getNumberOfSheets(); ++i)
@@ -209,8 +413,10 @@ public class Journal {
 			// close workbook
 			wrkbk.close();
 		} catch (IOException e) {
+			JOptionPane.showMessageDialog(null, "The excel file could not be read from or does not exist", "Error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		} catch (WriteException e) {
+			JOptionPane.showMessageDialog(null, "The file could not be writen into the specified directory.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
 			e.printStackTrace();
 		}
 	}
@@ -277,7 +483,7 @@ public class Journal {
 		}
 
 		ICSDate ics = new ICSDate(date);
-		
+
 		if (!weeks.contains(ics))
 			weeks.add(ics);
 
@@ -312,8 +518,8 @@ public class Journal {
 	 * @return Date
 	 */
 	private Date getDate(int c, int r, Sheet s) {
-		DateCell ddd = (DateCell)s.getCell(c,r);
-		
+		DateCell ddd = (DateCell) s.getCell(c, r);
+
 		return ddd.getDate();
 	}
 
