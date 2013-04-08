@@ -50,14 +50,14 @@ public class Journal {
 		try {
 
 			JFileChooser chooser = new JFileChooser();
-			
+
 			int ans = chooser.showOpenDialog(null);
-			
+
 			if (ans == JFileChooser.CANCEL_OPTION)
 				System.exit(0);
-			
+
 			File chosenFile = chooser.getSelectedFile();
-			
+
 			// create the reading book
 			Workbook reader = Workbook.getWorkbook(chosenFile);
 
@@ -70,7 +70,9 @@ public class Journal {
 				sheetNum = d[0];
 				rowNum = d[1];
 			} else {
-				JOptionPane.showMessageDialog(null, "The file chosen is not of the correct type.", "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null,
+						"The file chosen is not of the correct type.", "Error",
+						JOptionPane.ERROR_MESSAGE);
 				System.exit(1);
 			}
 
@@ -89,8 +91,10 @@ public class Journal {
 			Desktop.getDesktop().open(chosenFile);
 
 		} catch (BiffException | IOException e) {
-			JOptionPane.showMessageDialog(null, "The file specified does not exist", "Error", JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(null,
+					"The file specified does not exist", "Error",
+					JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 		}
 	}
 
@@ -119,8 +123,8 @@ public class Journal {
 		addHeading(sheet, 0, 1, "Commodity", 9000, null, Alignment.LEFT, "TBLR");
 		addString(sheet, 0, 2 + data.size(), "Total", null, Alignment.LEFT,
 				"TLBR");
-		addString(sheet, 0, 3 + data.size(), "Containers", null, Alignment.LEFT,
-				"TLBR");
+		addString(sheet, 0, 3 + data.size(), "Containers", null,
+				Alignment.LEFT, "TLBR");
 		addHeading(sheet, 1 + 2 * weeks.size(), 0, "Total", 3000, null,
 				Alignment.CENTRE, "TLR");
 		addHeading(sheet, 1 + 2 * weeks.size(), 1, "Value", 3000,
@@ -215,23 +219,41 @@ public class Journal {
 					today.compareTo(weeks.get(i)) > 0 ? Colour.RED : today
 							.compareTo(weeks.get(i)) == 0 ? Colour.YELLOW
 							: Colour.WHITE, Alignment.CENTRE, "RLB");
-			
-			valuebacklog += today.compareTo(weeks.get(i)) > 0 ? wtot[i].value : 0;
-			valueforeward += today.compareTo(weeks.get(i)) <= 0 ? wtot[i].value : 0;
-			containersbacklog += today.compareTo(weeks.get(i)) > 0 ? Math.round(wtot[i].qty / 26000) : 0;
-			containersforeward += today.compareTo(weeks.get(i)) <= 0 ? Math.round(wtot[i].qty / 26000) : 0;
+
+			valuebacklog += today.compareTo(weeks.get(i)) > 0 ? wtot[i].value
+					: 0;
+			valueforeward += today.compareTo(weeks.get(i)) <= 0 ? wtot[i].value
+					: 0;
+			containersbacklog += today.compareTo(weeks.get(i)) > 0 ? Math
+					.round(wtot[i].qty / 26000) : 0;
+			containersforeward += today.compareTo(weeks.get(i)) <= 0 ? Math
+					.round(wtot[i].qty / 26000) : 0;
 		}
-		
+
 		// add last section (backlog and foreward)
-		addString(sheet, 0, 5 + data.size(), "Container Value", null, Alignment.LEFT, "TLBR");
-		addString(sheet, 1, 5 + data.size(), "Value (R)", null, Alignment.CENTRE, "TLBR");
-		addString(sheet, 2, 5 + data.size(), "Containers", null, Alignment.CENTRE, "TLBR");
-		addString(sheet, 0, 6 + data.size(), "Backlog", null, Alignment.LEFT, "TLB");
-		addString(sheet, 0, 7 + data.size(), "Foreward", null, Alignment.LEFT, "TLB");
-		addNumber(sheet, 1, 6 + data.size(), valuebacklog, null, Alignment.CENTRE, "TB");
-		addNumber(sheet, 2, 6 + data.size(), containersbacklog, null, Alignment.CENTRE, "TBR");
-		addNumber(sheet, 1, 7 + data.size(), valueforeward, null, Alignment.CENTRE, "TB");
-		addNumber(sheet, 2, 7 + data.size(), containersforeward, null, Alignment.CENTRE, "TBR");
+		addString(sheet, 0, 5 + data.size(), "Container Value", null,
+				Alignment.LEFT, "TLBR");
+		addString(sheet, 1, 5 + data.size(), "Value (R)", null,
+				Alignment.CENTRE, "TLBR");
+		addString(sheet, 2, 5 + data.size(), "Containers", null,
+				Alignment.CENTRE, "TLBR");
+		addString(sheet, 0, 6 + data.size(), "Backlog", null, Alignment.LEFT,
+				"TLB");
+		addString(sheet, 0, 7 + data.size(), "Forward", null, Alignment.LEFT,
+				"TLB");
+		addNumber(sheet, 1, 6 + data.size(), valuebacklog, null,
+				Alignment.CENTRE, "TB");
+		addNumber(sheet, 2, 6 + data.size(), containersbacklog, null,
+				Alignment.CENTRE, "TBR");
+		addNumber(sheet, 1, 7 + data.size(), valueforeward, null,
+				Alignment.CENTRE, "TB");
+		addNumber(sheet, 2, 7 + data.size(), containersforeward, null,
+				Alignment.CENTRE, "TBR");
+
+		// add the freeze pane
+
+		sheet.getSettings().setVerticalFreeze(2);
+		sheet.getSettings().setHorizontalFreeze(1);
 
 	}
 
@@ -248,7 +270,6 @@ public class Journal {
 	 *            the border string for the cell
 	 * @return the cells format
 	 */
-	@SuppressWarnings("deprecation")
 	private static WritableCellFormat getCellFormat(Colour col,
 			Alignment align, boolean number, String border) {
 		WritableCellFormat format = new WritableCellFormat();
@@ -282,7 +303,12 @@ public class Journal {
 			format.setAlignment(align);
 			format.setBackground(col);
 		} catch (Exception e) {
-			JOptionPane.showMessageDialog(null, "Error - The cell format could not be written.\nPlease contact your administrator.", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"Error - The cell format could not be written.\nPlease contact your administrator.",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 		}
 		return format;
 	}
@@ -307,11 +333,19 @@ public class Journal {
 
 			sheet.addCell(n);
 		} catch (RowsExceededException e) {
-			JOptionPane.showMessageDialog(null, "The excel file has exceeded its bounds.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The excel file has exceeded its bounds.\nPlease contact your administrator",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 		} catch (WriteException e) {
-			JOptionPane.showMessageDialog(null, "The excel file could not be written to.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The excel file could not be written to.\nPlease contact your administrator",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 		}
 	}
 
@@ -335,10 +369,19 @@ public class Journal {
 
 			sheet.addCell(l);
 		} catch (RowsExceededException e) {
-			JOptionPane.showMessageDialog(null, "The excel file has exceeded its bounds.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
-			e.printStackTrace();
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The excel file has exceeded its bounds.\nPlease contact your administrator",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 		} catch (WriteException e) {
-			JOptionPane.showMessageDialog(null, "The excel file could not be written to.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The excel file could not be written to.\nPlease contact your administrator",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 			e.printStackTrace();
 		}
 	}
@@ -369,10 +412,20 @@ public class Journal {
 
 			sheet.addCell(l);
 		} catch (RowsExceededException e) {
-			JOptionPane.showMessageDialog(null, "The excel file has exceeded its bounds.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The excel file has exceeded its bounds.\nPlease contact your administrator",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 			e.printStackTrace();
 		} catch (WriteException e) {
-			JOptionPane.showMessageDialog(null, "The excel file could not be written to.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The excel file could not be written to.\nPlease contact your administrator",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 			e.printStackTrace();
 		}
 	}
@@ -413,10 +466,18 @@ public class Journal {
 			// close workbook
 			wrkbk.close();
 		} catch (IOException e) {
-			JOptionPane.showMessageDialog(null, "The excel file could not be read from or does not exist", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null,
+					"The excel file could not be read from or does not exist",
+					"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 			e.printStackTrace();
 		} catch (WriteException e) {
-			JOptionPane.showMessageDialog(null, "The file could not be writen into the specified directory.\nPlease contact your administrator", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane
+					.showMessageDialog(
+							null,
+							"The file could not be writen into the specified directory.\nPlease contact your administrator",
+							"Error", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
 			e.printStackTrace();
 		}
 	}
@@ -568,12 +629,19 @@ public class Journal {
 	 * @return null - if not correct <> array if correct (sheet, row) - of COP
 	 */
 	private int[] checkValidity(Workbook w) {
+		if (w.getSheet(0).getName().toLowerCase().equals("report dbn")
+				&& w.getSheet(1).getName().toLowerCase().equals("report cpt")) {
+			JOptionPane.showMessageDialog(null,
+					"The file chosen has already been converted.", "Error",
+					JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
+		}
+
 		for (int i = 0; i < w.getNumberOfSheets(); ++i) {
 			Sheet s = w.getSheet(i);
 			for (int r = 0; r < s.getRows(); ++r) {
 				for (int c = 0; c < s.getColumns(); ++c) {
 					String test = s.getCell(c, r).getContents().toLowerCase();
-
 					if (test.equals("cop")) {
 						int[] out = new int[3];
 						out[0] = i;
