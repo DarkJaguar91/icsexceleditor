@@ -7,11 +7,14 @@ public class data implements Comparable<data>{
 	public data(String com) {
 		commodity = com;
 		data = new valqty[53];
+		
+		for (int i = 0; i < 53; ++i)
+			data[i] = new valqty();
 	}
 
-	public void add(double val, double qty, int week) {
+	public void add(double price, double qty, int week) {
 		data[week].qty += qty;
-		data[week].value += val;
+		data[week].value += price * qty;
 	}
 
 	@Override
@@ -23,7 +26,6 @@ public class data implements Comparable<data>{
 	
 	@Override
 	public int compareTo(data o) {
-		this.commodity.compareTo(o.commodity);
-		return 0;
+		return this.commodity.compareTo(o.commodity);
 	}
 }
