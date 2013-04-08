@@ -3,24 +3,30 @@ package ICSJournal;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
-import java.util.GregorianCalendar;
 
+import jxl.CellView;
+import jxl.DateCell;
 import jxl.NumberCell;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
+import jxl.write.Label;
+import jxl.write.Number;
+import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
+import jxl.write.biff.RowsExceededException;
 
 public class Journal {
 
 	// required globals
 	WritableWorkbook workbook;
 	ArrayList<data> dbn;
-	ArrayList<Integer> dbnWeek;
+	ArrayList<ICSDate> dbnWeek;
 	ArrayList<data> cpt;
-	ArrayList<Integer> cptWeek;
+	ArrayList<ICSDate> cptWeek;
 
 	// formatting stuff
 
@@ -55,16 +61,125 @@ public class Journal {
 			writeWorkbook(reader, sheetNum);
 
 			// close workbooks
-			reader.close();
-			
+			// reader.close(); moved to writeWorkbook
+
 			System.out.println("finished");
-			
+
 		} catch (BiffException | IOException e) {
 			System.out.println("Fail");
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Writing the actual data to the sheets
+	 * 
+	 * @param wrkbk
+	 *            The workbook to write to
+	 * @param data
+	 *            The data to write
+	 * @param weeks
+	 *            The week data for the data
+	 * @param sheetnumber
+	 *            The sheet number to write to
+	 */
+	private void writeData(WritableWorkbook wrkbk, ArrayList<data> data,
+			ArrayList<ICSDate> weeks, int sheetnumber) {
+		// get the sheet
+		WritableSheet sheet = wrkbk.getSheet(sheetnumber);
+
+		// sort the values
+		Collections.sort(data);
+		Collections.sort(weeks);
+		
+		// headings
+		addString(sheet, 0, 1, "Commodity");
+
+		boolean writenWeekHeadings = false;
+
+		// data loop 1
+		for (int i = 0; i < data.size(); ++i) {
+			// add commodity name
+			addString(sheet, 0, i + 2, data.get(i).commodity);
+
+			// write weekly data
+			for (int x = 0; x < weeks.size(); ++x) {
+
+				// add headings for columns if not already done
+				if (!writenWeekHeadings) {
+					addString(sheet, 1 + x * 2, 0, "Week: " + weeks.get(x).week);
+					addString(sheet, 1 + x * 2, 1, "Value");
+					addString(sheet, 2 + x * 2, 1, "Quantity");
+				}
+
+				addNumber(sheet, 1+x*2, 2 + i, data.get(i).data[weeks.get(x).week].value);
+				addNumber(sheet, 2+x*2, 2 + i, data.get(i).data[weeks.get(x).week].qty);
+				
+			}
+			writenWeekHeadings = true; // run weeks once, so written the headings
+		}
+
+		// autosize every column
+		for (int i = 0; i < sheet.getColumns(); ++i) {
+			CellView cell = sheet.getColumnView(i);
+			cell.setAutosize(true);
+			sheet.setColumnView(i, cell);
+		}
+	}
+
+	/**
+	 * Add number to the sheet
+	 * @param sheet sheet to write to
+	 * @param c column
+	 * @param r row
+	 * @param number number to add
+	 */
+	private void addNumber(WritableSheet sheet, int c, int r, double number) {
+		try {
+			Number n = new Number(c, r, number);
+			
+			sheet.addCell(n);
+		} catch (RowsExceededException e) {
+			e.printStackTrace();
+		} catch (WriteException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Adds a string to the sheet at the given column
+	 * 
+	 * @param sheet
+	 *            Sheet to write to
+	 * @param c
+	 *            the column number
+	 * @param r
+	 *            the row number
+	 * @param string
+	 *            the string to enter
+	 */
+	private void addString(WritableSheet sheet, int c, int r, String string) {
+		try {
+			Label l = new Label(c, r, string);
+
+			// formatting here
+
+			sheet.addCell(l);
+		} catch (RowsExceededException e) {
+			e.printStackTrace();
+		} catch (WriteException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * The main writing process
+	 * 
+	 * @param old
+	 *            The readable workbook to copy from
+	 * @param sheetNumber
+	 *            the sheet number of the data sheet
+	 */
 	private void writeWorkbook(Workbook old, int sheetNumber) {
 		try {
 			// open workbook
@@ -75,14 +190,20 @@ public class Journal {
 			for (int i = 0; i <= wrkbk.getNumberOfSheets(); ++i)
 				if (i != sheetNumber)
 					wrkbk.removeSheet(i);
-			
+
 			// set data sheet name to data
 			wrkbk.getSheet(0).setName("Data");
-			
+
 			// create new sheets
-			wrkbk.createSheet("Cape Town", 0);
-			wrkbk.createSheet("Durban", 0);
-			
+			wrkbk.createSheet("Report CPT", 0);
+			wrkbk.createSheet("Report DBN", 0);
+
+			// write the dbn and cpt data
+			writeData(wrkbk, dbn, dbnWeek, 0);
+			writeData(wrkbk, cpt, cptWeek, 1);
+
+			// close reader workbook for incase its using the same file
+			old.close();
 			// write out workbook
 			wrkbk.write();
 			// close workbook
@@ -142,17 +263,12 @@ public class Journal {
 			} else {
 				addStuff(cpt, cptWeek, description, date, price, qty);
 			}
-
 		}
 	}
 
-	@SuppressWarnings("deprecation")
-	private void addStuff(ArrayList<data> list, ArrayList<Integer> weeks,
+	private void addStuff(ArrayList<data> list, ArrayList<ICSDate> weeks,
 			String desc, Date date, float price, float qty) {
 		data dta = new data(desc);
-
-		GregorianCalendar greg = new GregorianCalendar(date.getYear(),
-				date.getMonth(), date.getDay());
 
 		if (list.contains(dta)) {
 			dta = list.get(list.indexOf(dta));
@@ -160,7 +276,12 @@ public class Journal {
 			list.add(dta);
 		}
 
-		dta.add(price, qty, greg.get(GregorianCalendar.WEEK_OF_YEAR));
+		ICSDate ics = new ICSDate(date);
+		
+		if (!weeks.contains(ics))
+			weeks.add(ics);
+
+		dta.add(price, qty, ics.week);
 	}
 
 	/**
@@ -191,21 +312,9 @@ public class Journal {
 	 * @return Date
 	 */
 	private Date getDate(int c, int r, Sheet s) {
-		String tmp = s.getCell(c, r).getContents();
-
-		if (tmp.equals(""))
-			return null;
-
-		int one = Integer.parseInt(tmp.substring(0, tmp.indexOf("/")));
-		tmp = tmp.substring(tmp.indexOf("/") + 1);
-		int two = Integer.parseInt(tmp.substring(0, tmp.indexOf("/")));
-		tmp = tmp.substring(tmp.indexOf("/") + 1);
-		int three = Integer.parseInt(tmp);
-
-		@SuppressWarnings("deprecation")
-		Date d = new Date(one, two, three);
-
-		return d;
+		DateCell ddd = (DateCell)s.getCell(c,r);
+		
+		return ddd.getDate();
 	}
 
 	/**
