@@ -580,7 +580,6 @@ public class Journal {
 	 */
 	private Date getDate(int c, int r, Sheet s) {
 		DateCell ddd = (DateCell) s.getCell(c, r);
-
 		return ddd.getDate();
 	}
 
@@ -608,7 +607,7 @@ public class Journal {
 				out[4] = c;
 			if (test.contains("descr"))
 				out[3] = c;
-			if (test.contains("e.t.d"))
+			if (test.contains("e.t.a"))
 				if (s.getCell(c, rowNum - 1).getContents().toLowerCase()
 						.equals("revised"))
 					out[2] = c;
