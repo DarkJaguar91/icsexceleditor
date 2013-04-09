@@ -2,7 +2,6 @@ package Image;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.nio.Buffer;
 
 public class ImageHolder {
 	// globals

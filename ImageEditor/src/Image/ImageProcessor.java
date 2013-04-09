@@ -2,7 +2,6 @@ package Image;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class ImageProcessor {
