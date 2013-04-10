@@ -13,7 +13,9 @@ public class ICSDate implements Comparable<ICSDate> {
 	public ICSDate(Date date){
 		this.date = date;
 		
-		gc = new GregorianCalendar(date.getYear(), date.getMonth(), date.getDay());
+		gc = new GregorianCalendar();
+		
+		gc.setTime(date);
 		
 		week = gc.get(GregorianCalendar.WEEK_OF_YEAR);
 	}
