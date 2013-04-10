@@ -3,9 +3,11 @@ package ICSJournal;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -42,6 +44,9 @@ public class Journal {
 	// formats
 	private static NumberFormat numberFormat = new NumberFormat(
 			"#,##0;[RED]#,##0;-;\"no Text\"", NumberFormat.COMPLEX_FORMAT);
+	private static final String[] months = { "January", "February", "March",
+			"April", "May", "June", "July", "August", "September", "October",
+			"November", "December" };
 
 	/**
 	 * Constructor ( runs the entire algorithm)
@@ -165,6 +170,9 @@ public class Journal {
 							"TL");
 					addHeading(sheet, 1 + x * 2, 1, "Value", 3000,
 							Colour.GREY_50_PERCENT, Alignment.CENTRE, "BL");
+					weeks.get(x).gc.set(GregorianCalendar.DAY_OF_MONTH, weeks.get(x).gc.get(GregorianCalendar.DAY_OF_MONTH) + (7 - weeks.get(x).gc.get(GregorianCalendar.DAY_OF_WEEK)));
+					addHeading(sheet, 2 + x * 2, 0, weeks.get(x).gc.get(GregorianCalendar.DAY_OF_MONTH) + " "+ months[weeks.get(x).gc.get(GregorianCalendar.MONTH)], 3000, null, Alignment.CENTRE,
+							"TR");
 					addHeading(
 							sheet,
 							2 + x * 2,
