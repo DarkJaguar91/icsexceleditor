@@ -1,6 +1,7 @@
 package Image;
 
 import java.awt.Color;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
@@ -90,7 +91,13 @@ public class ImageProcessor {
 		return out;
 	}
 
-	public static ImageHolder equalizeImage(ImageHolder input) {
+	public static ImageHolder equalizeImage(ImageHolder input, Point start,
+			Point end) {
+
+		if (start == null)
+			start = new Point();
+		if (end == null)
+			end = new Point(input.getWidth(), input.getHeight());
 
 		ArrayList<int[]> eqhisto = getEqualizedHistogram(input
 				.getBufferedImage());
@@ -98,13 +105,20 @@ public class ImageProcessor {
 		BufferedImage newImage = new BufferedImage(input.getWidth(),
 				input.getHeight(), BufferedImage.TYPE_INT_RGB);
 
-		for (int x = 0; x < newImage.getWidth(); ++x)
-			for (int y = 0; y < newImage.getHeight(); ++y) {
+		for (int x = 0; x < input.getWidth(); ++x)
+			for (int y = 0; y < input.getHeight(); ++y) {
 				Color c = new Color(input.getBufferedImage().getRGB(x, y));
-
-				Color newc = new Color(eqhisto.get(0)[c.getRed()],
-						eqhisto.get(1)[c.getGreen()],
-						eqhisto.get(2)[c.getBlue()], c.getAlpha());
+				Color newc;
+				if (x < end.x && x >= start.x && y < end.y && y >= start.y) {
+					if (c.getRed() < 5 && c.getBlue() < 5 && c.getGreen() < 5) {
+						newc = c;
+					} else
+						newc = new Color(eqhisto.get(0)[c.getRed()],
+								eqhisto.get(1)[c.getGreen()],
+								eqhisto.get(2)[c.getBlue()], c.getAlpha());
+				} else {
+					newc = c;
+				}
 
 				newImage.setRGB(x, y, newc.getRGB());
 			}
