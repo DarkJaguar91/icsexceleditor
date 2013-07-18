@@ -9,7 +9,7 @@ public class ICSDate implements Comparable<ICSDate> {
 	public int week;
 	public GregorianCalendar gc;
 	
-	@SuppressWarnings("deprecation")
+//	@SuppressWarnings("deprecation")
 	public ICSDate(Date date){
 		this.date = date;
 		

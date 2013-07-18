@@ -3,7 +3,6 @@ package ICSJournal;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
