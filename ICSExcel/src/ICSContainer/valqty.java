@@ -1,4 +1,4 @@
-package ICSJournal;
+package ICSContainer;
 
 public class valqty {
 	public double value = 0;

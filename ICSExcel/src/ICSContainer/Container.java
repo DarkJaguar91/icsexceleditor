@@ -1,4 +1,4 @@
-package ICSJournal;
+package ICSContainer;
 
 import java.awt.Desktop;
 import java.io.File;
@@ -31,7 +31,7 @@ import jxl.write.WriteException;
 import jxl.write.biff.RowsExceededException;
 
 @SuppressWarnings("deprecation")
-public class Journal {
+public class Container {
 
 	// required globals
 	WritableWorkbook workbook;
@@ -50,7 +50,7 @@ public class Journal {
 	/**
 	 * Constructor ( runs the entire algorithm)
 	 */
-	public Journal() {
+	public Container() {
 		try {
 
 			JFileChooser chooser = new JFileChooser();
