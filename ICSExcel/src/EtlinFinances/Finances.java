@@ -1,38 +1,20 @@
 package EtlinFinances;
 
-import java.awt.Desktop;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
-
 import jxl.CellView;
 import jxl.Workbook;
 import jxl.format.Alignment;
 import jxl.format.Colour;
-import jxl.write.Border;
-import jxl.write.BorderLineStyle;
+import jxl.write.*;
 import jxl.write.Label;
 import jxl.write.Number;
-import jxl.write.NumberFormat;
-import jxl.write.WritableCellFormat;
-import jxl.write.WritableSheet;
-import jxl.write.WritableWorkbook;
-import jxl.write.WriteException;
 import jxl.write.biff.RowsExceededException;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @SuppressWarnings("deprecation")
 public class Finances {
@@ -104,9 +86,9 @@ public class Finances {
 			} 
 
 		}
-		
-		public void writeSheet(WritableSheet sheet, dataHolder holder) throws RowsExceededException, WriteException{
-			ArrayList<weekInYear> weeks = holder.weeks;
+
+    public void writeSheet(WritableSheet sheet, dataHolder holder) throws WriteException {
+        ArrayList<weekInYear> weeks = holder.weeks;
 			Collections.sort(weeks);
 			
 			ArrayList<SuplierData> supliers = holder.supliers;
