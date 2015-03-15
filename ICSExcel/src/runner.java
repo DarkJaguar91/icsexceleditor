@@ -1,4 +1,4 @@
-import ICSContainer.Container;
+import GUI.MainFrame;
 
 /**
  * 
@@ -8,8 +8,6 @@ import ICSContainer.Container;
  */
 public class runner {
 	public static void main(String[] args) {
-		new Container();
-
-//		 new EtlinFinances.Finances();
-	}
+        new MainFrame();
+    }
 }
